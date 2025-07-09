@@ -2,34 +2,33 @@
 
 ## 📌 Descripción General
 
-Este proyecto consta de dos microservicios desarrollados con Spring Boot, orientados a la gestión de productos y el control de inventario dentro de un sistema de compras. Ambos servicios están diseñados bajo principios SOLID, alta cohesión y bajo acoplamiento, permitiendo escalabilidad, mantenimiento y trazabilidad.
+Este sistema está compuesto por dos microservicios desarrollados con Spring Boot que forman parte de una arquitectura de compras desacoplada y basada en buenas prácticas:
 
-### Microservicios incluidos:
+- **Productos Service**: Gestión de productos, creación y consulta mediante endpoints REST.
+- **Inventario Service**: Control de stock, registro de movimientos y trazabilidad de inventario.
 
-- **Productos Service**: se encarga de registrar, listar y consultar productos disponibles. Implementa una arquitectura hexagonal simplificada con DTOs, controladores REST, servicios, repositorios y entidades JPA.
-- **Inventario Service**: administra el stock de productos, registra entradas y salidas, y mantiene un historial detallado de movimientos. Toda modificación al inventario genera automáticamente un registro en la entidad `HistorialInventario`.
+Ambos servicios interactúan entre sí y con otros servicios potenciales como `orden-service`, bajo una arquitectura orientada a microservicios.
 
 ---
 
-## ⚙️ Requisitos Técnicos
+## ⚙️ Requisitos
 
 - Java 17+
 - Maven 3.9+
 - Docker y Docker Compose
-- PostgreSQL (usado vía contenedor)
 
 ---
 
-## 🚀 Instalación y Ejecución con Docker
+## 🚀 Instrucciones de instalación y ejecución con Docker
 
-### 1. Clonar el repositorio
+### 1. Clona el repositorio
 
 ```bash
 git clone <URL-REPOSITORIO>
 cd "Prueba tecnica test"
 ```
 
-### 2. Compilar los servicios
+### 2. Compila los servicios
 
 ```bash
 cd productos
@@ -39,7 +38,7 @@ cd ../inventario
 cd ..
 ```
 
-### 3. Verificar estructura del proyecto
+### 3. Estructura esperada del proyecto
 
 ```
 Prueba tecnica test/
@@ -52,30 +51,39 @@ Prueba tecnica test/
 │   └── Dockerfile
 ```
 
-### 4. Dockerfiles (en cada microservicio)
+### 4. Dockerfiles (ya deben estar en cada servicio)
+
+Ejemplo básico (ya incluido):
 
 ```dockerfile
+# Dockerfile para productos/inventario
 FROM openjdk:17
 WORKDIR /app
 COPY target/*.jar app.jar
 ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
 
-### 5. Levantar la infraestructura
+### 5. Levanta el entorno completo
+
+Desde la raíz del proyecto:
 
 ```bash
 docker-compose up -d --build
 ```
 
-- PostgreSQL → `localhost:5432`
-- productos-service → `localhost:8081`
-- inventario-service → `localhost:8082`
+Esto levantará:
+
+- PostgreSQL en el puerto `5432`
+- `productos-service` en el puerto `8081`
+- `inventario-service` en el puerto `8082`
 
 ---
 
-## 🛠️ Configuración de Aplicaciones
+## 🛠️ Configuración
 
-### Productos (`application.properties`)
+### Archivos `application.properties` de cada servicio
+
+#### Productos
 
 ```properties
 server.port=8081
@@ -86,7 +94,7 @@ spring.jpa.hibernate.ddl-auto=update
 spring.application.name=productos-service
 ```
 
-### Inventario (`application.properties`)
+#### Inventario
 
 ```properties
 server.port=8082
@@ -99,25 +107,24 @@ spring.application.name=inventario-service
 
 ---
 
-## 🧱 Arquitectura por Servicio
+## 🧱 Arquitectura de cada microservicio
 
-### Productos Service
+### Estructura común en ambos:
 
-- **DTOs separados para request/response**
-- **Controlador REST con validaciones**
-- **Manejo de errores centralizado**
-- **Respuesta estándar alineada con JSON:API**
-- **Sin ModelMapper** (transformación explícita)
+- `controller`: Exposición de endpoints.
+- `dto`: Modelos de entrada/salida.
+- `entity`: Mapeo JPA.
+- `repository`: Abstracción del acceso a datos.
+- `service`: Lógica de negocio.
 
-### Inventario Service
+### Inventario Service adicionalmente:
 
-- **Descuento de stock con validación de cantidad**
-- **Registro automático en `HistorialInventario`**
-- **Cobertura completa de pruebas unitarias**
+- Incluye el módulo `HistorialInventario` para trazabilidad.
+- Cada operación de descuento de stock se registra automáticamente.
 
 ---
 
-## 🔁 Flujo de Compra
+## 🔄 Flujo de compra implementado
 
 ```text
 [Cliente API] ---> [orden-service] ---> [productos-service]
@@ -125,57 +132,46 @@ spring.application.name=inventario-service
                                      ---> [inventario-service]
 ```
 
-1. El cliente hace la solicitud a `orden-service`.
-2. Se valida existencia del producto con `productos-service`.
-3. Se descuenta stock vía `inventario-service`.
-4. Se registra movimiento en `historial_inventario`.
+1. El cliente realiza la compra a través de `orden-service`.
+2. Se valida el producto con `productos-service`.
+3. Se descuenta stock con `inventario-service`, registrando cada cambio.
+4. Se confirma la orden según disponibilidad.
 
 ---
 
-## ✅ Buenas Prácticas
+## 📈 Pruebas y calidad
 
-- Principios SOLID aplicados en servicios
-- Separación clara de responsabilidades
-- Uso de DTOs para encapsular contratos externos
-- Persistencia consistente con JPA y PostgreSQL
-
----
-
-## 🔬 Pruebas y Calidad
-
-- **JUnit 5** y **Mockito** en ambos servicios
-- Pruebas para controladores y servicios
-- Cobertura superior al 90%
-- Validación de entradas, flujos positivos y negativos
+- Se implementaron pruebas unitarias con **JUnit 5** y **Mockito**.
+- La cobertura supera el 90% en ambos servicios.
+- Se cubren flujos exitosos, fallidos, validaciones y límites.
 
 ---
 
-## 🌱 Git Flow y Versionamiento
+## 📚 Metodología y control de versiones
 
-Se usó Git Flow con las siguientes ramas:
+Se aplicó **Git Flow** con las siguientes ramas:
 
-- `main`: versión estable
-- `develop`: integración
+- `main`: versión de producción
+- `develop`: integración continua
 - `feature/*`: nuevas funcionalidades
-- `hotfix/*`: correcciones urgentes
+- `hotfix/*`: correcciones críticas
 
 ### Convención de commits:
 
-```bash
-feat: agregar validación de stock negativo
-fix: corregir error en respuesta de producto
-refactor: simplificar lógica de descuento
-test: pruebas unitarias para flujo fallido
-```
+- `feat:` nueva funcionalidad
+- `fix:` corrección de errores
+- `test:` pruebas unitarias
+- `refactor:` mejoras sin cambiar comportamiento
+- `docs:` documentación
 
 ---
 
-## 🤖 Asistencia Técnica
+## 🤖 Asistencia técnica
 
-Se emplearon herramientas de asistencia como **OpenAI** para validar buenas prácticas, depurar estructuras y optimizar pruebas. Todas las implementaciones fueron evaluadas manualmente y alineadas con estándares profesionales.
+Durante el desarrollo se contó con apoyo puntual de herramientas como **OpenAI** para validar estructuras, depurar pruebas unitarias y mejorar la documentación técnica. Todas las decisiones fueron revisadas manualmente garantizando la calidad final del producto.
 
 ---
 
 ## 📄 Licencia
 
-Proyecto de carácter académico. Su uso está limitado a fines educativos o demostrativos. No se recomienda su uso en entornos productivos sin revisiones adicionales.
+Proyecto académico con fines educativos. No destinado a uso comercial.

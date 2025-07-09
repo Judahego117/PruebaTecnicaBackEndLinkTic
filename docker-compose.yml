@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: pruebaTecnica
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Herrera117343
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  producto:
+    build:
+      context: ./productos
+      dockerfile: Dockerfile
+    container_name: productosService
+    depends_on: 
+      - postgres
+    ports:
+      - "8081:8081"
+
+  inventario:
+    build:
+      context: ./inventario
+      dockerfile: Dockerfile
+    container_name: inventarioService
+    depends_on: 
+      - postgres
+    ports:
+      - "8082:8082"
+
+volumes:
+  postgres_data:
